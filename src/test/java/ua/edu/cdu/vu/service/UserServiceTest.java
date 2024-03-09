@@ -26,9 +26,10 @@ class UserServiceTest {
         User user = createNewUser();
         given(database.save(user)).willReturn(ID);
 
-        userService.create(user);
+        long id = userService.create(user);
 
         then(database).should().save(user);
+        assertEquals(ID, id);
     }
 
     @Test
