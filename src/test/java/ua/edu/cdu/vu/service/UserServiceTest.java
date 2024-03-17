@@ -7,6 +7,9 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import ua.edu.cdu.vu.database.Database;
 import ua.edu.cdu.vu.domain.User;
 
+import java.util.NoSuchElementException;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
@@ -35,22 +38,46 @@ class UserServiceTest {
     @Test
     void getById() {
         User user = createExistingUser();
-        given(database.getById(ID)).willReturn(user);
+        given(database.findById(ID)).willReturn(Optional.of(user));
 
         User userById = userService.getById(ID);
 
-        then(database).should().getById(ID);
+        then(database).should().findById(ID);
         assertSame(user, userById);
     }
 
     @Test
-    void update() {
+    void getById_shouldThrowNoSuchElementException_whenNoUserFound() {
+        given(database.findById(ID)).willReturn(Optional.empty());
+        assertThrows(NoSuchElementException.class, () -> userService.getById(ID));
+    }
+
+    @Test
+    void update_shouldUpdate_whenExistingUser() {
         User user = createExistingUser();
         willDoNothing().given(database).update(user);
+        given(database.findById(ID)).willReturn(Optional.of(user));
 
         userService.update(user);
 
         then(database).should().update(user);
+    }
+
+    @Test
+    void update_shouldThrowIllegalArgumentException_whenUserIdIsNull() {
+        User user = createNewUser();
+        assertThrows(IllegalArgumentException.class, () -> userService.update(user));
+    }
+
+    @Test
+    void update_shouldSave_whenNewUser() {
+        User user = createExistingUser();
+
+        given(database.findById(ID)).willReturn(Optional.empty());
+
+        userService.update(user);
+
+        then(database).should().save(user);
     }
 
     private static User createNewUser() {
